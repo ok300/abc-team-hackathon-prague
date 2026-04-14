@@ -407,7 +407,7 @@ async function showWizard(pubky, session) {
     try {
       const postId = generatePostId();
       const postPath = `/pub/pubky.app/posts/${postId}`;
-      const postData = { content: url, kind: 'short' };
+      const postData = { content: url, kind: 'short', attachments: [], embed: null, parent: null };
 
       await session.storage.putJson(postPath, postData);
 
