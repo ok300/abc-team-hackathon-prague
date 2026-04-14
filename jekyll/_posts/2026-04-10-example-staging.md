@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Getting Started with Jekyll"
+title: "Example Staging"
 date: 2026-04-10 10:00:00 +0000
 ---
 
@@ -15,8 +15,8 @@ Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac tu
 Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui.
 
 <div
-  data-pubky-author="gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo"
-  data-pubky-post="0033QP8EZJ2A0"
+  data-pubky-author="8mmmaouyode95qf7scbt4moytceiga4we5i3fwra71xapmwguwdy"
+  data-pubky-post="0034W0M6HFEB0"
   data-pubky-theme="light"
   data-pubky-use-staging="true">
 </div>
