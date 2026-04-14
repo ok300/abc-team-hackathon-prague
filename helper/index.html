@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pubky Profile</title>
+  <title>Pubky Comment Widget Setup</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -20,11 +20,12 @@
       border-radius: 20px;
       box-shadow: 0 2px 4px rgba(15,23,42,.06), 0 16px 40px -16px rgba(15,23,42,.14);
       padding: 40px 32px;
-      max-width: 380px;
+      max-width: 520px;
       width: 100%;
       text-align: center;
     }
     h1 { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
     .subtitle { font-size: 14px; color: #64748b; margin-bottom: 28px; }
 
     /* ── Login view ── */
@@ -39,38 +40,8 @@
     #qr-wrap canvas { display: block; }
     #status { font-size: 13px; color: #64748b; }
 
-    /* ── Profile view ── */
-    #profile-view { display: none; }
-    .avatar-wrap {
-      width: 88px;
-      height: 88px;
-      border-radius: 50%;
-      margin: 0 auto 16px;
-      overflow: hidden;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      font-weight: 700;
-      color: #fff;
-      position: relative;
-    }
-    .avatar-wrap img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    #username { font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
-    #pubkey {
-      font-size: 11px;
-      color: #94a3b8;
-      font-family: ui-monospace, monospace;
-      word-break: break-all;
-      margin-bottom: 24px;
-    }
+    /* ── Wizard view ── */
+    #wizard-view { display: none; }
     button {
       display: inline-flex;
       align-items: center;
@@ -110,6 +81,100 @@
       margin: 0 auto 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Wizard ── */
+    .wizard-progress {
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 28px;
+    }
+    .wizard-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 600;
+      border: 2px solid #e2e8f0; color: #94a3b8; background: #fff;
+      transition: all .2s;
+    }
+    .wizard-dot.done  { border-color: #6366f1; background: #6366f1; color: #fff; }
+    .wizard-dot.current { border-color: #6366f1; color: #6366f1; }
+    .wizard-line { width: 40px; height: 2px; background: #e2e8f0; transition: background .2s; }
+    .wizard-line.active { background: #6366f1; }
+
+    .wizard-panel { text-align: center; }
+
+    .wizard-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 10px; background: #f8fafc;
+      margin-bottom: 24px; text-align: left;
+    }
+    .wizard-user__avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 13px; overflow: hidden;
+      position: relative;
+    }
+    .wizard-user__avatar img {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    }
+    .wizard-user__meta { min-width: 0; flex: 1; }
+    .wizard-user__name {
+      font-weight: 600; font-size: 14px; color: #0f172a;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .wizard-user__handle {
+      font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px;
+    }
+
+    .url-input {
+      width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
+      border-radius: 10px; font-size: 14px; outline: none;
+      transition: border-color .15s; margin-bottom: 8px;
+    }
+    .url-input:focus { border-color: #6366f1; }
+    .url-input.invalid { border-color: #f87171; }
+
+    .field-error {
+      display: none; font-size: 13px; color: #b91c1c; text-align: left; margin-bottom: 12px;
+    }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 24px; border-radius: 10px; border: none;
+      background: #6366f1; color: #fff; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-primary:disabled { opacity: .6; cursor: wait; }
+
+    .snippet-wrap {
+      position: relative; text-align: left; background: #0f172a;
+      border-radius: 10px; padding: 16px 18px; margin-top: 16px; margin-bottom: 8px;
+    }
+    .snippet-wrap pre {
+      margin: 0; color: #e2e8f0; font-size: 13px; line-height: 1.6;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre; overflow-x: auto;
+    }
+    .snippet-wrap .copy-btn {
+      position: absolute; top: 8px; right: 8px;
+      padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.1); color: #e2e8f0;
+      font-size: 12px; cursor: pointer; transition: background .15s;
+    }
+    .snippet-wrap .copy-btn:hover { background: rgba(255,255,255,.2); }
+
+    .copy-status {
+      font-size: 13px; color: #16a34a; min-height: 20px;
+    }
+
+    .signout-link {
+      margin-top: 20px; background: none; border: none; color: #94a3b8;
+      font-size: 13px; cursor: pointer; text-decoration: underline;
+    }
+    .signout-link:hover { color: #64748b; }
+
+    .step2-spinner { margin: 16px auto; }
   </style>
 </head>
 <body>
@@ -124,16 +189,49 @@
     <div id="error-box"></div>
   </div>
 
-  <!-- Profile view (shown after login) -->
-  <div id="profile-view">
-    <div class="avatar-wrap" id="avatar-wrap">
-      <span id="avatar-initials"></span>
-      <img id="avatar-img" src="" alt="" onerror="this.remove()">
+  <!-- Wizard view (shown after login) -->
+  <div id="wizard-view" style="display:none">
+    <!-- User info -->
+    <div id="wizard-user" class="wizard-user"></div>
+
+    <!-- Step progress -->
+    <div class="wizard-progress">
+      <span class="wizard-dot current" data-step="1">1</span>
+      <span class="wizard-line" data-line="1"></span>
+      <span class="wizard-dot" data-step="2">2</span>
+      <span class="wizard-line" data-line="2"></span>
+      <span class="wizard-dot" data-step="3">3</span>
     </div>
-    <div id="username">Loading…</div>
-    <div id="pubkey"></div>
-    <button id="signout-btn">Sign out</button>
-    <div id="error-box2" style="display:none;font-size:13px;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-top:16px;text-align:left;"></div>
+
+    <!-- Step 1: Enter URL -->
+    <div id="step-1" class="wizard-panel">
+      <h2>Enter the URL of the blog post</h2>
+      <p class="subtitle">Provide the URL of the blog post you want to enable comments on</p>
+      <input type="url" id="blog-url" class="url-input" placeholder="https://example.com/my-blog-post" />
+      <div id="url-error" class="field-error"></div>
+      <button id="next-btn" class="btn-primary" type="button">Next →</button>
+    </div>
+
+    <!-- Step 2: Creating post (automatic) -->
+    <div id="step-2" class="wizard-panel" style="display:none">
+      <h2>Creating Pubky Post</h2>
+      <div class="spinner step2-spinner"></div>
+      <p id="step2-status" class="subtitle">Publishing your post to the Pubky network…</p>
+      <div id="step2-error" class="field-error"></div>
+    </div>
+
+    <!-- Step 3: Code snippet -->
+    <div id="step-3" class="wizard-panel" style="display:none">
+      <h2>Add This to Your Page</h2>
+      <p class="subtitle">Paste this snippet into your blog post's HTML to enable the Pubky comment widget</p>
+      <div class="snippet-wrap">
+        <pre id="code-snippet"></pre>
+        <button id="copy-btn" class="copy-btn" type="button">Copy</button>
+      </div>
+      <div id="copy-status" class="copy-status"></div>
+    </div>
+
+    <button id="wizard-signout" class="signout-link" type="button">Sign out</button>
   </div>
 
 </div>
@@ -144,11 +242,12 @@ import QRCode from 'https://esm.sh/qrcode@1.5.4';
 
 const SESSION_KEY = 'pubky-session';
 const NEXUS_ORIGIN = 'https://nexus.pubky.app';
+const AUTH_CAPS = '/pub/pubky.app/:rw';
 
-const loginView   = document.getElementById('login-view');
-const profileView = document.getElementById('profile-view');
-const statusEl    = document.getElementById('status');
-const errorBox    = document.getElementById('error-box');
+const loginView  = document.getElementById('login-view');
+const wizardView = document.getElementById('wizard-view');
+const statusEl   = document.getElementById('status');
+const errorBox   = document.getElementById('error-box');
 
 function showError(el, msg) {
   el.style.display = 'block';
@@ -160,39 +259,144 @@ function initials(name) {
   return name.trim().split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
 }
 
-async function showProfile(pubky, session) {
+function shortKey(pk) {
+  if (!pk || pk.length < 14) return pk || '';
+  return pk.slice(0, 14) + '…' + pk.slice(-6);
+}
+
+function isValidUrl(str) {
+  try {
+    const url = new URL(str);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function generatePostId() {
+  const CHARS = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  let n = BigInt(Date.now()) * 1000n;
+  let s = '';
+  while (n > 0n) {
+    s = CHARS[Number(n % 32n)] + s;
+    n /= 32n;
+  }
+  return s.padStart(13, '0');
+}
+
+function goToStep(step) {
+  [1, 2, 3].forEach(s => {
+    document.getElementById(`step-${s}`).style.display = s === step ? 'block' : 'none';
+    const dot = document.querySelector(`.wizard-dot[data-step="${s}"]`);
+    dot.classList.toggle('done', s < step);
+    dot.classList.toggle('current', s === step);
+  });
+  [1, 2].forEach(l => {
+    document.querySelector(`.wizard-line[data-line="${l}"]`).classList.toggle('active', l < step);
+  });
+}
+
+function renderUserInfo(pkStr, pkZ32, profile) {
+  const name = (profile && profile.name) || shortKey(pkStr);
+  const avatarSrc = `${NEXUS_ORIGIN}/static/avatar/${encodeURIComponent(pkZ32)}`;
+  const fb = initials(profile && profile.name);
+  document.getElementById('wizard-user').innerHTML = `
+    <div class="wizard-user__avatar">
+      <img src="${avatarSrc}" alt="" onerror="this.remove()">${fb}
+    </div>
+    <div class="wizard-user__meta">
+      <div class="wizard-user__name">${name}</div>
+      <div class="wizard-user__handle" title="${pkStr}">${shortKey(pkStr)}</div>
+    </div>
+  `;
+}
+
+async function showWizard(pubky, session) {
   loginView.style.display  = 'none';
-  profileView.style.display = 'block';
+  wizardView.style.display = 'block';
 
   const pk    = session.info.publicKey;
-  const pkStr = pk.toString();   // "pubky<z32>" — display format
-  const pkZ32 = pk.z32();        // raw z32 — for nexus / addresses
+  const pkStr = pk.toString();
+  const pkZ32 = pk.z32();
 
-  // Short display of the public key
-  document.getElementById('pubkey').textContent =
-    pkStr.slice(0, 14) + '…' + pkStr.slice(-6);
-
-  // Fetch profile.json from public storage
-  let profile = {};
+  // Render user info (without profile first, then update)
+  renderUserInfo(pkStr, pkZ32, null);
   try {
-    profile = await pubky.publicStorage.getJson(
+    const profile = await pubky.publicStorage.getJson(
       `${pkStr}/pub/pubky.app/profile.json`
     );
-  } catch (e) {
-    const eb = document.getElementById('error-box2');
-    showError(eb, 'Could not load profile: ' + e.message);
-  }
+    if (profile) renderUserInfo(pkStr, pkZ32, profile);
+  } catch { /* ignore */ }
 
-  const name = profile.name || pkStr;
-  document.getElementById('username').textContent = name;
-  document.getElementById('avatar-initials').textContent = initials(name);
+  // Step 1 → Step 2 → Step 3
+  const urlInput = document.getElementById('blog-url');
+  const urlError = document.getElementById('url-error');
+  const nextBtn  = document.getElementById('next-btn');
 
-  // Avatar: use nexus static endpoint (cached / proxied)
-  const img = document.getElementById('avatar-img');
-  img.src = `${NEXUS_ORIGIN}/static/avatar/${encodeURIComponent(pkZ32)}`;
+  nextBtn.addEventListener('click', async () => {
+    const url = urlInput.value.trim();
 
-  // Sign-out
-  document.getElementById('signout-btn').addEventListener('click', () => {
+    // Validate
+    if (!url) {
+      urlError.textContent = 'Please enter a URL.';
+      urlError.style.display = 'block';
+      urlInput.classList.add('invalid');
+      return;
+    }
+    if (!isValidUrl(url)) {
+      urlError.textContent = 'Please enter a valid URL (e.g., https://example.com/blog-post).';
+      urlError.style.display = 'block';
+      urlInput.classList.add('invalid');
+      return;
+    }
+    urlError.style.display = 'none';
+    urlInput.classList.remove('invalid');
+
+    // Step 2: Create post
+    goToStep(2);
+    const step2Error = document.getElementById('step2-error');
+    const step2Status = document.getElementById('step2-status');
+
+    try {
+      const postId = generatePostId();
+      const postData = { content: url, kind: 'short' };
+
+      await pubky.publicStorage.putJson(
+        `${pkStr}/pub/pubky.app/posts/${postId}.json`,
+        postData
+      );
+
+      // Step 3: Show code snippet
+      goToStep(3);
+
+      const snippet =
+`<div
+  data-pubky-author="${pkZ32}"
+  data-pubky-post="${postId}"
+  data-pubky-theme="light">
+</div>
+
+<script type="module" src="/pubky-post.js"><\/script>`;
+
+      document.getElementById('code-snippet').textContent = snippet;
+
+      // Copy button
+      document.getElementById('copy-btn').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(snippet);
+          document.getElementById('copy-status').textContent = '✓ Copied to clipboard!';
+        } catch {
+          document.getElementById('copy-status').textContent = 'Copy failed — please select and copy manually.';
+        }
+      });
+    } catch (err) {
+      step2Status.textContent = 'Failed to create post.';
+      showError(step2Error, err.message);
+    }
+  });
+
+  // Sign out
+  document.getElementById('wizard-signout').addEventListener('click', () => {
     localStorage.removeItem(SESSION_KEY);
     location.reload();
   });
@@ -201,22 +405,22 @@ async function showProfile(pubky, session) {
 async function main() {
   const pubky = new Pubky();
 
-  // Try to restore an existing session from localStorage
+  // Try to restore an existing session
   const saved = localStorage.getItem(SESSION_KEY);
   if (saved) {
     try {
       const session = await pubky.restoreSession(saved);
-      await showProfile(pubky, session);
+      await showWizard(pubky, session);
       return;
     } catch (_) {
       localStorage.removeItem(SESSION_KEY);
     }
   }
 
-  // Start QR auth flow (empty caps = identity only)
+  // Start QR auth flow with read/write capabilities
   let flow;
   try {
-    flow = pubky.startAuthFlow('', AuthFlowKind.signin());
+    flow = pubky.startAuthFlow(AUTH_CAPS, AuthFlowKind.signin());
   } catch (e) {
     showError(errorBox, 'Failed to start auth flow: ' + e.message);
     return;
@@ -235,11 +439,11 @@ async function main() {
     return;
   }
 
-  // Wait for the user to approve via their signer
+  // Wait for user to approve
   try {
     const session = await flow.awaitApproval();
     localStorage.setItem(SESSION_KEY, session.export());
-    await showProfile(pubky, session);
+    await showWizard(pubky, session);
   } catch (e) {
     showError(errorBox, 'Auth failed: ' + e.message);
     statusEl.textContent = 'Authentication failed.';
