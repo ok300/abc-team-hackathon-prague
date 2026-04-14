@@ -373,8 +373,8 @@ async function showWizard(pubky, session) {
       const postId = generatePostId();
       const postData = { content: url, kind: 'short' };
 
-      await pubky.publicStorage.putJson(
-        `${pkStr}/pub/pubky.app/posts/${postId}.json`,
+      await session.storage.putJson(
+        `/pub/pubky.app/posts/${postId}.json`,
         postData
       );
 
