@@ -13,3 +13,12 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.
 
 Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui.
+
+<div
+  data-pubky-author="gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo"
+  data-pubky-post="0033QP8EZJ2A0"
+  data-pubky-theme="light"
+  data-pubky-use-staging="true">
+</div>
+
+<script type="module" src="/pubky-post.js"></script>
