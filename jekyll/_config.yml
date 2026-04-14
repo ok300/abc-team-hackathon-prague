@@ -1,0 +1,8 @@
+title: ABC Team Blog
+description: A sample Jekyll blog for the ABC Team Hackathon Prague
+baseurl: /abc-team-hackathon-prague/jekyll
+url: ""
+
+theme: minima
+
+permalink: /:year/:month/:day/:title/
