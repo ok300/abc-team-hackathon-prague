@@ -4,6 +4,7 @@ import QRCode from 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm';
 const CAPABILITIES = '/pub/pubky.app/:rw';
 const STORAGE_KEY = 'pubky-login-session';
 const DEFAULT_NEXUS = 'https://nexus.pubky.app/v0';
+const STAGING_NEXUS = 'https://nexus.staging.pubky.app/v0';
 
 const STYLE_ID = 'pubky-login-styles';
 const CSS = `
@@ -94,7 +95,8 @@ export async function startLogin(el) {
   injectStyles(el.ownerDocument || document);
   el.classList.add('pubky-login');
 
-  const base = el.dataset.pubkyBase || DEFAULT_NEXUS;
+  const useStaging = el.dataset.pubkyUseStaging === 'true';
+  const base = el.dataset.pubkyBase || (useStaging ? STAGING_NEXUS : DEFAULT_NEXUS);
   const pubky = new Pubky();
 
   const showSignedIn = async (z32) => {
