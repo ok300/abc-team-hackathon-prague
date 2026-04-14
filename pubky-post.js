@@ -499,6 +499,8 @@ async function renderReplies(container, base, author, post, depth, useStaging) {
       ${items}
     `;
     bindReplyActions(container, base, useStaging);
+    updateReplyActions(container);
+    if (canRecurse) {
       target.querySelectorAll(':scope > .pubky-post__reply [data-pubky-replies]').forEach(c => {
         const a = c.dataset.pubkyReplyAuthor;
         const p = c.dataset.pubkyReplyId;
