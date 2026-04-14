@@ -107,11 +107,57 @@ const POST_CSS = `
   }
   .pubky-post__reply .pubky-post__replies-title{font-size:11px}
   .pubky-post__replies-empty{font-size:13px;color:var(--pp-muted)}
-  .pubky-post__login{
-    margin-bottom:10px;
-  }
+  .pubky-post__login{margin:0 0 12px 0}
   .pubky-post__login .pubky-login{
-    max-width:100%;border-radius:10px;padding:12px 14px;
+    max-width:100%;border:0;box-shadow:none;background:transparent;
+    padding:0;border-radius:0;font-family:inherit;color:inherit;
+  }
+  .pubky-post__login .pubky-login button{
+    width:auto;padding:7px 14px;font-size:13px;border-radius:8px;
+  }
+  .pubky-post__login .pubky-login__user{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 10px;border:1px solid var(--pp-border);
+    border-radius:10px;background:rgba(99,102,241,.04);
+  }
+  .pubky-post__login .pubky-login__avatar{width:32px;height:32px;font-size:12px}
+  .pubky-post__login .pubky-login__name{font-size:13px;color:var(--pp-fg)}
+  .pubky-post__login .pubky-login__handle{font-size:11px;color:var(--pp-muted)}
+  .pubky-post__login .pubky-login__logout{
+    background:transparent;color:var(--pp-muted);border:0;
+    font-size:12px;font-weight:500;padding:0;width:auto;
+    border-radius:0;text-decoration:underline;cursor:pointer;
+  }
+  .pubky-post__login .pubky-login__logout:hover{color:var(--pp-fg)}
+  .pubky-post__reply-actions{margin-top:8px}
+  .pubky-post__reply-btn{
+    background:none;border:1px solid var(--pp-border);border-radius:8px;
+    color:var(--pp-muted);font-size:12px;font-weight:600;padding:4px 10px;
+    cursor:pointer;transition:background .15s,color .15s,border-color .15s;
+  }
+  .pubky-post__reply-btn:hover{background:rgba(99,102,241,.08);color:var(--pp-accent);border-color:var(--pp-accent)}
+  .pubky-post__reply-form{
+    display:none;flex-direction:column;gap:8px;margin-top:8px;
+    padding:10px;border:1px solid var(--pp-border);border-radius:10px;
+    background:rgba(99,102,241,.04);
+  }
+  .pubky-post__reply-form[data-open="1"]{display:flex}
+  .pubky-post__reply-form textarea{
+    width:100%;min-height:64px;resize:vertical;font:inherit;font-size:14px;
+    color:var(--pp-fg);background:var(--pp-bg);
+    border:1px solid var(--pp-border);border-radius:8px;padding:8px 10px;
+    box-sizing:border-box;outline:none;
+  }
+  .pubky-post__reply-form textarea:focus{border-color:var(--pp-accent)}
+  .pubky-post__reply-form-row{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+  .pubky-post__reply-form-err{color:var(--pp-error-fg);font-size:12px;margin-right:auto}
+  .pubky-post__reply-form button{
+    border-radius:8px;font-size:13px;font-weight:600;padding:6px 12px;cursor:pointer;border:0;
+  }
+  .pubky-post__reply-form .pubky-post__reply-submit{background:var(--pp-accent);color:#fff}
+  .pubky-post__reply-form .pubky-post__reply-submit:disabled{opacity:.6;cursor:wait}
+  .pubky-post__reply-form .pubky-post__reply-cancel{
+    background:transparent;color:var(--pp-muted);border:1px solid var(--pp-border);
   }
   .pubky-post--loading::before{
     content:"";width:12px;height:12px;border-radius:50%;
@@ -302,6 +348,7 @@ function renderHtml(post, user, base, useStaging) {
     ? `<a href="${escapeHtml(pubkyPostUrl(d.id, d.author, useStaging))}" target="_blank" rel="noopener noreferrer">${timeStr}</a>`
     : timeStr;
   return `
+    <div class="pubky-post__login" data-pubky-post-login></div>
     <div class="pubky-post__header">
       <div class="pubky-post__avatar">${renderAvatar(user, base)}</div>
       <div class="pubky-post__meta">
@@ -455,22 +502,8 @@ function bindReplyActions(root, base, useStaging) {
 
 async function renderReplies(container, base, author, post, depth, useStaging) {
   depth = depth || 0;
-
-  // At the top level, prepend a login widget so users can see/manage their
-  // session without needing a separate `data-pubky-login` element.
-  let target = container;
   if (depth === 0) {
-    container.innerHTML = '';
-    const doc = container.ownerDocument || document;
-    const loginEl = doc.createElement('div');
-    loginEl.className = 'pubky-post__login';
-    container.appendChild(loginEl);
-    startLogin(loginEl, { base });
-
-    const inner = doc.createElement('div');
-    container.appendChild(inner);
-    target = inner;
-    target.innerHTML = '<div class="pubky-post--loading">Loading replies…</div>';
+    container.innerHTML = '<div class="pubky-post--loading">Loading replies…</div>';
   }
 
   try {
@@ -480,7 +513,7 @@ async function renderReplies(container, base, author, post, depth, useStaging) {
       + `&sorting=timeline&limit=100`;
     const replies = await fetchJson(url);
     if (!Array.isArray(replies) || replies.length === 0) {
-      target.innerHTML = depth === 0
+      container.innerHTML = depth === 0
         ? '<div class="pubky-post__replies-empty">No replies yet.</div>'
         : '';
       return;
@@ -494,21 +527,21 @@ async function renderReplies(container, base, author, post, depth, useStaging) {
       const hasChildren = canRecurse && r && r.counts && r.counts.replies > 0;
       return renderReplyHtml(r, users[i], hasChildren, base, useStaging);
     }).join('');
-    target.innerHTML = `
+    container.innerHTML = `
       <div class="pubky-post__replies-title">${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}</div>
       ${items}
     `;
     bindReplyActions(container, base, useStaging);
     updateReplyActions(container);
     if (canRecurse) {
-      target.querySelectorAll(':scope > .pubky-post__reply [data-pubky-replies]').forEach(c => {
+      container.querySelectorAll(':scope > .pubky-post__reply [data-pubky-replies]').forEach(c => {
         const a = c.dataset.pubkyReplyAuthor;
         const p = c.dataset.pubkyReplyId;
         if (a && p) renderReplies(c, base, a, p, depth + 1, useStaging);
       });
     }
   } catch (err) {
-    target.innerHTML = `<div class="pubky-post__error">Failed to load replies: ${escapeHtml(err.message)}</div>`;
+    container.innerHTML = `<div class="pubky-post__error">Failed to load replies: ${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -533,6 +566,8 @@ async function render(el, opts) {
       fetchJson(`${base}/user/${encodeURIComponent(author)}`).catch(() => null),
     ]);
     el.innerHTML = renderHtml(postData, userData, base, useStaging);
+    const loginEl = el.querySelector('[data-pubky-post-login]');
+    if (loginEl) startLogin(loginEl, { base });
     bindReplyActions(el, base, useStaging);
     updateReplyActions(el);
     if (!el.dataset.pubkyAuthBound) {
