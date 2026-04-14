@@ -3,6 +3,12 @@ name: Build and Deploy Jekyll
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and deploy'
+        required: false
+        default: 'main'
 
 permissions:
   contents: read
