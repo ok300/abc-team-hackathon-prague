@@ -14,6 +14,8 @@ Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac tu
 
 Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui.
 
+<div data-pubky-login data-pubky-use-staging="true"></div>
+
 <div
   data-pubky-author="gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo"
   data-pubky-post="0033QP8EZJ2A0"
