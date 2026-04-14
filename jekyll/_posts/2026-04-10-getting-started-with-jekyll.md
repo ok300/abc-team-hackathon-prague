@@ -21,4 +21,4 @@ Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condi
   data-pubky-use-staging="true">
 </div>
 
-<script type="module" src="{{ site.baseurl }}/pubky-post.js"></script>
+<script type="module" src="https://raw.githubusercontent.com/aintnostressin/abc-team-hackathon-prague/refs/heads/main/pubky-post.js"></script>

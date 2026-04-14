@@ -45,9 +45,6 @@ jobs:
       - name: Copy helper folder
         run: cp -r ../helper ../_site_final/helper
 
-      - name: Copy pubky-post.js
-        run: cp ../pubky-post.js ../_site_final/jekyll/pubky-post.js
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
