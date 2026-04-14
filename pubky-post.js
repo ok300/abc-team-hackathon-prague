@@ -62,6 +62,30 @@
     .pubky-post--loading{
       color:var(--pp-muted);font-size:14px;display:flex;align-items:center;gap:8px;
     }
+    .pubky-post__replies{
+      margin-top:16px;padding-top:12px;border-top:1px solid var(--pp-border);
+      display:flex;flex-direction:column;gap:10px;
+    }
+    .pubky-post__replies-title{
+      font-size:12px;font-weight:600;color:var(--pp-muted);
+      text-transform:uppercase;letter-spacing:.05em;
+    }
+    .pubky-post__reply{
+      display:flex;gap:10px;padding:10px 12px;border-radius:12px;
+      background:rgba(99,102,241,.04);border:1px solid var(--pp-border);
+    }
+    .pubky-post__reply .pubky-post__avatar{width:32px;height:32px;font-size:12px}
+    .pubky-post__reply-body{flex:1;min-width:0}
+    .pubky-post__reply-head{
+      display:flex;align-items:baseline;gap:8px;margin-bottom:2px;
+    }
+    .pubky-post__reply .pubky-post__name{font-size:14px}
+    .pubky-post__reply .pubky-post__content{font-size:14px}
+    .pubky-post__reply .pubky-post__replies{
+      margin-top:10px;padding-top:8px;border-top:1px dashed var(--pp-border);
+    }
+    .pubky-post__reply .pubky-post__replies-title{font-size:11px}
+    .pubky-post__replies-empty{font-size:13px;color:var(--pp-muted)}
     .pubky-post--loading::before{
       content:"";width:12px;height:12px;border-radius:50%;
       border:2px solid var(--pp-border);border-top-color:var(--pp-accent);
@@ -145,7 +169,73 @@
         <div class="pubky-post__time">${escapeHtml(formatTime(d.indexed_at))}</div>
       </div>
       <div class="pubky-post__content">${escapeHtml(d.content)}</div>
+      <div class="pubky-post__replies" data-pubky-replies>
+        <div class="pubky-post--loading">Loading replies…</div>
+      </div>
     `;
+  }
+
+  const MAX_REPLY_DEPTH = 6;
+
+  function renderReplyHtml(reply, user, hasChildren) {
+    const d = reply.details || {};
+    const name = (user && user.details && user.details.name) || 'Unknown';
+    const nested = hasChildren
+      ? `<div class="pubky-post__replies" data-pubky-replies data-pubky-reply-author="${escapeHtml(d.author || '')}" data-pubky-reply-id="${escapeHtml(d.id || '')}"><div class="pubky-post--loading">Loading replies…</div></div>`
+      : '';
+    return `
+      <div class="pubky-post__reply">
+        <div class="pubky-post__avatar">${renderAvatar(user)}</div>
+        <div class="pubky-post__reply-body">
+          <div class="pubky-post__reply-head">
+            <div class="pubky-post__name">${escapeHtml(name)}</div>
+            <div class="pubky-post__handle" title="${escapeHtml(d.author || '')}">${escapeHtml(shortId(d.author))}</div>
+            <div class="pubky-post__time" style="margin-left:auto">${escapeHtml(formatTime(d.indexed_at))}</div>
+          </div>
+          <div class="pubky-post__content">${escapeHtml(d.content)}</div>
+          ${nested}
+        </div>
+      </div>
+    `;
+  }
+
+  async function renderReplies(container, base, author, post, depth) {
+    depth = depth || 0;
+    try {
+      const url = `${base}/stream/posts?source=post_replies`
+        + `&author_id=${encodeURIComponent(author)}`
+        + `&post_id=${encodeURIComponent(post)}`
+        + `&sorting=timeline&limit=100`;
+      const replies = await fetchJson(url);
+      if (!Array.isArray(replies) || replies.length === 0) {
+        container.innerHTML = depth === 0
+          ? '<div class="pubky-post__replies-empty">No replies yet.</div>'
+          : '';
+        return;
+      }
+      const users = await Promise.all(replies.map(r => {
+        const a = r && r.details && r.details.author;
+        return a ? fetchJson(`${base}/user/${encodeURIComponent(a)}`).catch(() => null) : null;
+      }));
+      const canRecurse = depth + 1 < MAX_REPLY_DEPTH;
+      const items = replies.map((r, i) => {
+        const hasChildren = canRecurse && r && r.counts && r.counts.replies > 0;
+        return renderReplyHtml(r, users[i], hasChildren);
+      }).join('');
+      container.innerHTML = `
+        <div class="pubky-post__replies-title">${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}</div>
+        ${items}
+      `;
+      if (canRecurse) {
+        container.querySelectorAll(':scope > .pubky-post__reply [data-pubky-replies]').forEach(c => {
+          const a = c.dataset.pubkyReplyAuthor;
+          const p = c.dataset.pubkyReplyId;
+          if (a && p) renderReplies(c, base, a, p, depth + 1);
+        });
+      }
+    } catch (err) {
+      container.innerHTML = `<div class="pubky-post__error">Failed to load replies: ${escapeHtml(err.message)}</div>`;
+    }
   }
 
   async function render(el, opts) {
@@ -166,6 +256,8 @@
         fetchJson(`${base}/user/${encodeURIComponent(author)}`).catch(() => null),
       ]);
       el.innerHTML = renderHtml(postData, userData);
+      const repliesEl = el.querySelector('[data-pubky-replies]');
+      if (repliesEl) renderReplies(repliesEl, base, author, post);
       return postData;
     } catch (err) {
       el.innerHTML = `<div class="pubky-post__error">Failed to load post: ${escapeHtml(err.message)}</div>`;
