@@ -65,6 +65,12 @@ const POST_CSS = `
     font-size:12px;color:var(--pp-muted);
     flex-shrink:0;padding-top:2px;
   }
+  .pubky-post__time a{
+    color:inherit;text-decoration:none;
+  }
+  .pubky-post__time a:hover{
+    text-decoration:underline;
+  }
   .pubky-post__content{
     white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere;
     font-size:15px;color:var(--pp-fg);
@@ -214,16 +220,18 @@ function shortId(id) {
 
 function formatTime(ms) {
   if (!ms) return '';
-  const diff = Date.now() - ms;
-  const s = Math.floor(diff / 1000);
-  if (s < 60) return s + 's';
-  const m = Math.floor(s / 60);
-  if (m < 60) return m + 'm';
-  const h = Math.floor(m / 60);
-  if (h < 24) return h + 'h';
-  const d = Math.floor(h / 24);
-  if (d < 30) return d + 'd';
-  return new Date(ms).toLocaleDateString();
+  const d = new Date(ms);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
+}
+
+function pubkyPostUrl(postId, authorId, useStaging) {
+  const host = useStaging ? 'staging.pubky.app' : 'pubky.app';
+  return `https://${host}/post/${encodeURIComponent(postId)}/${encodeURIComponent(authorId)}`;
 }
 
 function initials(name) {
@@ -286,9 +294,13 @@ function replyActionsHtml(author, postId) {
   `;
 }
 
-function renderHtml(post, user, base) {
+function renderHtml(post, user, base, useStaging) {
   const d = post.details || {};
   const name = (user && user.details && user.details.name) || 'Unknown';
+  const timeStr = escapeHtml(formatTime(d.indexed_at));
+  const timeHtml = d.id && d.author
+    ? `<a href="${escapeHtml(pubkyPostUrl(d.id, d.author, useStaging))}" target="_blank" rel="noopener noreferrer">${timeStr}</a>`
+    : timeStr;
   return `
     <div class="pubky-post__header">
       <div class="pubky-post__avatar">${renderAvatar(user, base)}</div>
@@ -296,7 +308,7 @@ function renderHtml(post, user, base) {
         <div class="pubky-post__name">${escapeHtml(name)}</div>
         <div class="pubky-post__handle" title="${escapeHtml(d.author || '')}">${escapeHtml(shortId(d.author))}</div>
       </div>
-      <div class="pubky-post__time">${escapeHtml(formatTime(d.indexed_at))}</div>
+      <div class="pubky-post__time">${timeHtml}</div>
     </div>
     <div class="pubky-post__content">${escapeHtml(d.content)}</div>
     ${replyActionsHtml(d.author, d.id)}
@@ -308,12 +320,16 @@ function renderHtml(post, user, base) {
 
 const MAX_REPLY_DEPTH = 6;
 
-function renderReplyHtml(reply, user, hasChildren, base) {
+function renderReplyHtml(reply, user, hasChildren, base, useStaging) {
   const d = reply.details || {};
   const name = (user && user.details && user.details.name) || 'Unknown';
   const nested = hasChildren
     ? `<div class="pubky-post__replies" data-pubky-replies data-pubky-reply-author="${escapeHtml(d.author || '')}" data-pubky-reply-id="${escapeHtml(d.id || '')}"><div class="pubky-post--loading">Loading replies…</div></div>`
     : '';
+  const timeStr = escapeHtml(formatTime(d.indexed_at));
+  const timeHtml = d.id && d.author
+    ? `<a href="${escapeHtml(pubkyPostUrl(d.id, d.author, useStaging))}" target="_blank" rel="noopener noreferrer">${timeStr}</a>`
+    : timeStr;
   return `
     <div class="pubky-post__reply">
       <div class="pubky-post__avatar">${renderAvatar(user, base)}</div>
@@ -321,7 +337,7 @@ function renderReplyHtml(reply, user, hasChildren, base) {
         <div class="pubky-post__reply-head">
           <div class="pubky-post__name">${escapeHtml(name)}</div>
           <div class="pubky-post__handle" title="${escapeHtml(d.author || '')}">${escapeHtml(shortId(d.author))}</div>
-          <div class="pubky-post__time" style="margin-left:auto">${escapeHtml(formatTime(d.indexed_at))}</div>
+          <div class="pubky-post__time" style="margin-left:auto">${timeHtml}</div>
         </div>
         <div class="pubky-post__content">${escapeHtml(d.content)}</div>
         ${replyActionsHtml(d.author, d.id)}
@@ -331,7 +347,7 @@ function renderReplyHtml(reply, user, hasChildren, base) {
   `;
 }
 
-async function pollForReply(container, base, parentAuthor, parentPostId, expectedId) {
+async function pollForReply(container, base, parentAuthor, parentPostId, expectedId, useStaging) {
   const delays = [1000, 1500, 2500, 4000, 6000];
   for (let i = 0; i < delays.length; i++) {
     await new Promise(r => setTimeout(r, delays[i]));
@@ -342,11 +358,11 @@ async function pollForReply(container, base, parentAuthor, parentPostId, expecte
         + `&sorting=timeline&limit=100`;
       const replies = await fetchJson(url);
       if (Array.isArray(replies) && replies.some(r => r && r.details && r.details.id === expectedId)) {
-        return renderReplies(container, base, parentAuthor, parentPostId);
+        return renderReplies(container, base, parentAuthor, parentPostId, 0, useStaging);
       }
     } catch {}
   }
-  return renderReplies(container, base, parentAuthor, parentPostId);
+  return renderReplies(container, base, parentAuthor, parentPostId, 0, useStaging);
 }
 
 function findRepliesContainerFor(actionsEl) {
@@ -368,7 +384,7 @@ function updateReplyActions(root) {
   });
 }
 
-function bindReplyActions(root, base) {
+function bindReplyActions(root, base, useStaging) {
   root.querySelectorAll('[data-pubky-reply-actions]').forEach(el => {
     if (el.dataset.pubkyBound) return;
     el.dataset.pubkyBound = '1';
@@ -422,11 +438,11 @@ function bindReplyActions(root, base) {
           };
           container.innerHTML = `
             <div class="pubky-post__replies-title">Your reply (waiting for Nexus to index…)</div>
-            ${renderReplyHtml(optimistic, me, false, base)}
+            ${renderReplyHtml(optimistic, me, false, base, useStaging)}
           `;
-          bindReplyActions(container, base);
+          bindReplyActions(container, base, useStaging);
           updateReplyActions(container);
-          pollForReply(container, base, parentAuthor, parentPostId, id);
+          pollForReply(container, base, parentAuthor, parentPostId, id, useStaging);
         }
       } catch (err) {
         errEl.textContent = 'Failed: ' + (err && err.message ? err.message : String(err));
@@ -437,7 +453,7 @@ function bindReplyActions(root, base) {
   });
 }
 
-async function renderReplies(container, base, author, post, depth) {
+async function renderReplies(container, base, author, post, depth, useStaging) {
   depth = depth || 0;
 
   // At the top level, prepend a login widget so users can see/manage their
@@ -476,19 +492,17 @@ async function renderReplies(container, base, author, post, depth) {
     const canRecurse = depth + 1 < MAX_REPLY_DEPTH;
     const items = replies.map((r, i) => {
       const hasChildren = canRecurse && r && r.counts && r.counts.replies > 0;
-      return renderReplyHtml(r, users[i], hasChildren, base);
+      return renderReplyHtml(r, users[i], hasChildren, base, useStaging);
     }).join('');
     target.innerHTML = `
       <div class="pubky-post__replies-title">${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}</div>
       ${items}
     `;
-    bindReplyActions(container, base);
-    updateReplyActions(container);
-    if (canRecurse) {
+    bindReplyActions(container, base, useStaging);
       target.querySelectorAll(':scope > .pubky-post__reply [data-pubky-replies]').forEach(c => {
         const a = c.dataset.pubkyReplyAuthor;
         const p = c.dataset.pubkyReplyId;
-        if (a && p) renderReplies(c, base, a, p, depth + 1);
+        if (a && p) renderReplies(c, base, a, p, depth + 1, useStaging);
       });
     }
   } catch (err) {
@@ -516,15 +530,15 @@ async function render(el, opts) {
       fetchJson(`${base}/post/${encodeURIComponent(author)}/${encodeURIComponent(post)}`),
       fetchJson(`${base}/user/${encodeURIComponent(author)}`).catch(() => null),
     ]);
-    el.innerHTML = renderHtml(postData, userData, base);
-    bindReplyActions(el, base);
+    el.innerHTML = renderHtml(postData, userData, base, useStaging);
+    bindReplyActions(el, base, useStaging);
     updateReplyActions(el);
     if (!el.dataset.pubkyAuthBound) {
       el.dataset.pubkyAuthBound = '1';
       window.addEventListener(AUTH_EVENT, () => updateReplyActions(el));
     }
     const repliesEl = el.querySelector('[data-pubky-replies]');
-    if (repliesEl) renderReplies(repliesEl, base, author, post);
+    if (repliesEl) renderReplies(repliesEl, base, author, post, 0, useStaging);
     return postData;
   } catch (err) {
     el.innerHTML = `<div class="pubky-post__error">Failed to load post: ${escapeHtml(err.message)}</div>`;
